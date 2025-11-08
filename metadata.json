@@ -1,0 +1,5 @@
+{
+  "name": "React Reddit Clone",
+  "description": "A feature-rich frontend for a Reddit clone application, built with React, TypeScript, and Tailwind CSS. It features a classic feed, post details, voting, and a responsive design.",
+  "requestFramePermissions": []
+}
