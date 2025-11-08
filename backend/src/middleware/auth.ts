@@ -1,5 +1,5 @@
 // FIX: Unify express imports to a single, standard import to resolve type conflicts.
-import { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_default_jwt_secret';
@@ -11,7 +11,7 @@ interface JwtPayload {
 }
 
 // FIX: Use explicit types from the unified import to ensure correct type resolution.
-export default function(req: Request, res: Response, next: NextFunction) {
+export default function(req: express.Request, res: express.Response, next: express.NextFunction) {
   const authHeader = req.header('Authorization');
   if (!authHeader) {
     return res.status(401).json({ message: 'No token, authorization denied' });

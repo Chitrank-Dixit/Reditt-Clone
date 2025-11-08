@@ -125,7 +125,6 @@ const Post: React.FC<PostProps> = ({ post: initialPost, isLink = true, onUpdateP
             }));
     };
     setComments(prevComments => removeComment(prevComments, deletedCommentId));
-    // Also update post's comment count locally for immediate feedback
     setPost(prevPost => ({
         ...prevPost,
         commentsCount: prevPost.commentsCount > 0 ? prevPost.commentsCount - 1 : 0
@@ -136,7 +135,7 @@ const Post: React.FC<PostProps> = ({ post: initialPost, isLink = true, onUpdateP
     <>
       <div className="p-4">
         <div className="flex items-center text-xs text-reddit-text-secondary mb-2">
-          <span className="font-bold text-reddit-text-primary">r/{post.subreddit}</span>
+          <Link to={`/r/${post.subreddit.name}`} onClick={(e) => e.stopPropagation()} className="font-bold text-reddit-text-primary hover:underline">r/{post.subreddit.name}</Link>
           <span className="mx-1">•</span>
           <span>Posted by <Link to={`/user/${post.author.name}`} onClick={(e) => e.stopPropagation()} className="hover:underline">u/{post.author.name}</Link></span>
         </div>

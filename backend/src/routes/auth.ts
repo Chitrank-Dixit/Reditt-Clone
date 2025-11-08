@@ -29,7 +29,8 @@ router.post('/register', async (req, res) => {
         user = new User({ name, email, password });
         await user.save();
 
-        const payload = { user: { id: user.id } };
+        // FIX: Add user's name to the JWT payload
+        const payload = { user: { id: user.id, name: user.name } };
 
         jwt.sign(payload, JWT_SECRET, { expiresIn: '5h' }, (err, token) => {
             if (err) throw err;
@@ -61,7 +62,8 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        const payload = { user: { id: user.id } };
+        // FIX: Add user's name to the JWT payload
+        const payload = { user: { id: user.id, name: user.name } };
 
         jwt.sign(payload, JWT_SECRET, { expiresIn: '5h' }, (err, token) => {
             if (err) throw err;

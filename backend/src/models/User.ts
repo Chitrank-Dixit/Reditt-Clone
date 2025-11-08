@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export interface IUser extends Document {
@@ -9,6 +9,8 @@ export interface IUser extends Document {
   avatarUrl?: string;
   joinDate: Date;
   karma: number;
+  role: 'user' | 'moderator' | 'admin';
+  joinedSubreddits: Types.ObjectId[];
 }
 
 const UserSchema = new Schema({
@@ -19,6 +21,8 @@ const UserSchema = new Schema({
   avatarUrl: { type: String, default: null },
   joinDate: { type: Date, default: Date.now },
   karma: { type: Number, default: 0 },
+  role: { type: String, enum: ['user', 'moderator', 'admin'], default: 'user' },
+  joinedSubreddits: [{ type: Schema.Types.ObjectId, ref: 'Subreddit' }],
 }, {
     timestamps: true
 });
@@ -34,7 +38,6 @@ UserSchema.pre('save', async function(next) {
 });
 
 UserSchema.set('toJSON', {
-    // FIX: Add 'any' type to returnedObject to allow adding the 'id' property.
     transform: (document, returnedObject: any) => {
         returnedObject.id = returnedObject._id.toString();
         delete returnedObject._id;

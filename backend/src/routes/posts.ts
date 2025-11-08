@@ -2,60 +2,54 @@ import { Router } from 'express';
 import Post from '../models/Post';
 import Comment from '../models/Comment';
 import User from '../models/User';
+import Subreddit from '../models/Subreddit';
 import auth from '../middleware/auth';
 
 const router = Router();
 
-// Get all posts
+// Get all posts (personalized feed for logged-in users, global for guests)
 router.get('/', async (req, res) => {
   try {
-    const sort = (req.query.sort as string) || 'hot'; // default to 'hot'
+    const sort = (req.query.sort as string) || 'hot';
+    const userId = req.user?.id;
+    
+    let query: any = {};
+    if (userId) {
+        const user = await User.findById(userId);
+        if (user && user.joinedSubreddits.length > 0) {
+            query.subreddit = { $in: user.joinedSubreddits };
+        } else if (user) {
+            // If user has joined no subreddits, return an empty feed
+            return res.json([]);
+        }
+    }
+    
+    // Always filter removed posts for all users
+    query.status = 'visible';
 
     let posts;
 
+    const findQuery = Post.find(query).populate('author', 'name').populate('subreddit', 'name');
+
     if (sort === 'new') {
-      posts = await Post.find().sort({ createdAt: -1 });
+      posts = await findQuery.sort({ createdAt: -1 });
     } else if (sort === 'top') {
-      posts = await Post.find().sort({ votes: -1 });
+      posts = await findQuery.sort({ votes: -1 });
     } else if (sort === 'controversial') {
-      posts = await Post.find().sort({ commentsCount: -1, votes: 1 });
+        posts = await findQuery.sort({ commentsCount: -1, votes: 1 });
     }
-    else { // 'hot'
+     else { // 'hot'
       const epoch = new Date('1970-01-01');
-      const postsWithScore = await Post.aggregate([
-        {
-          $project: {
-            title: 1,
-            content: 1,
-            author: 1,
-            subreddit: 1,
-            votes: 1,
-            commentsCount: 1,
-            imageUrl: 1,
-            createdAt: 1,
-            updatedAt: 1,
-            postType: 1,
-            linkUrl: 1,
-            score: {
-              $add: [
-                { $log10: { $max: [1, { $abs: '$votes' }] } },
-                {
-                  $divide: [
-                    { $subtract: ['$createdAt', epoch] },
-                    45000 * 1000, 
-                  ],
-                },
-              ],
-            },
-          },
-        },
-        { $sort: { score: -1 } },
-      ]);
+      const documents = await Post.find(query).populate('author', 'name').populate('subreddit', 'name');
       
-      posts = postsWithScore.map(p => {
-        const { _id, score, ...rest } = p;
-        return { ...rest, id: _id.toString() };
+      const scoredPosts = documents.map(post => {
+        const score = Math.log10(Math.max(1, Math.abs(post.votes))) + 
+                      (post.createdAt.getTime() - epoch.getTime()) / (45000 * 1000);
+        return { ...post.toJSON(), score };
       });
+      
+      scoredPosts.sort((a, b) => b.score - a.score);
+      posts = scoredPosts;
     }
 
     res.json(posts);
@@ -68,22 +62,22 @@ router.get('/', async (req, res) => {
 // Create a new post
 router.post('/', auth, async (req, res) => {
   try {
-    const { title, content, subreddit, imageUrl, postType, linkUrl } = req.body;
+    const { title, content, subreddit: subredditName, imageUrl, postType, linkUrl } = req.body;
 
-    if (!title || !subreddit) {
+    if (!title || !subredditName) {
       return res.status(400).json({ message: 'Title and subreddit are required' });
     }
 
-    const user = await User.findById(req.user.id);
-    if (!user) {
-        return res.status(404).json({ message: 'Authenticated user not found' });
+    const subreddit = await Subreddit.findOne({ name: subredditName });
+    if (!subreddit) {
+      return res.status(404).json({ message: `Subreddit '${subredditName}' not found` });
     }
 
     const newPost = new Post({
       title,
       content,
-      subreddit,
-      author: { id: user.id, name: user.name },
+      subreddit: subreddit._id,
+      author: req.user.id,
       votes: 1,
       imageUrl,
       postType,
@@ -91,7 +85,8 @@ router.post('/', auth, async (req, res) => {
     });
 
     await newPost.save();
-    res.status(201).json(newPost);
+    const populatedPost = await Post.findById(newPost._id).populate('author', 'name').populate('subreddit', 'name');
+    res.status(201).json(populatedPost);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error creating post', error });
@@ -101,8 +96,8 @@ router.post('/', auth, async (req, res) => {
 // Get a single post by ID
 router.get('/:id', async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
-    if (!post) {
+    const post = await Post.findById(req.params.id).populate('author', 'name').populate('subreddit', 'name');
+    if (!post || post.status === 'removed') {
       return res.status(404).json({ message: 'Post not found' });
     }
     res.json(post);
@@ -124,15 +119,16 @@ router.put('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    if (post.author.id.toString() !== req.user.id) {
+    if (post.author.toString() !== req.user.id) {
         return res.status(403).json({ message: 'User not authorized to edit this post' });
     }
 
     post.title = title;
-    post.content = content;
+    post.content = content || undefined;
     await post.save();
     
-    res.json(post);
+    const populatedPost = await Post.findById(post._id).populate('author', 'name').populate('subreddit', 'name');
+    res.json(populatedPost);
   } catch (error) {
     console.error('Error updating post:', error);
     res.status(500).json({ message: 'Server error', error });
@@ -147,14 +143,11 @@ router.delete('/:id', auth, async (req, res) => {
             return res.status(404).json({ message: 'Post not found' });
         }
         
-        if (post.author.id.toString() !== req.user.id) {
+        if (post.author.toString() !== req.user.id) {
             return res.status(403).json({ message: 'User not authorized to delete this post' });
         }
         
-        // Delete all comments associated with the post
         await Comment.deleteMany({ post: post._id });
-        
-        // Delete the post itself
         await Post.findByIdAndDelete(req.params.id);
         
         res.status(204).send();
@@ -178,20 +171,32 @@ router.get('/:id/comments', async (req, res) => {
       sortOption = { createdAt: 1 };
     }
 
-    const comments = await Comment.find({ post: req.params.id })
+    const populateReplies = async (comments: any[]): Promise<any[]> => {
+        for (let i = 0; i < comments.length; i++) {
+            if (comments[i].replies && comments[i].replies.length > 0) {
+                const populatedReplies = await Comment.find({ '_id': { $in: comments[i].replies } }).populate('author', 'name');
+                comments[i].replies = await populateReplies(populatedReplies);
+            }
+        }
+        return comments;
+    };
+
+    const topLevelComments = await Comment.find({ post: req.params.id, parentComment: { $exists: false } })
       .sort(sortOption)
-      .populate('replies');
-      
-    res.json(comments);
+      .populate('author', 'name');
+    
+    const commentsWithPopulatedReplies = await populateReplies(topLevelComments);
+
+    res.json(commentsWithPopulatedReplies);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }
 });
 
 // Vote on a post
-router.post('/:id/vote', async (req, res) => {
+router.post('/:id/vote', auth, async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
+    const post = await Post.findById(req.params.id).populate('author');
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
@@ -208,13 +213,13 @@ router.post('/:id/vote', async (req, res) => {
       return res.status(400).json({ message: 'Invalid vote direction' });
     }
     
-    // Update author's karma
-    if (voteChange !== 0) {
-      await User.findOneAndUpdate({ name: post.author.name }, { $inc: { karma: voteChange } });
+    if (voteChange !== 0 && post.author instanceof User) {
+      await User.findByIdAndUpdate(post.author._id, { $inc: { karma: voteChange } });
     }
     
     await post.save();
-    res.json(post);
+    const populatedPost = await Post.findById(post._id).populate('author', 'name').populate('subreddit', 'name');
+    res.json(populatedPost);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }

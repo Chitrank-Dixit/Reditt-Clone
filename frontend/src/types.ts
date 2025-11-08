@@ -9,6 +9,7 @@ export interface AuthUser {
     id: string;
     name: string;
     iat: number;
+    exp: number;
 }
 
 export interface ProfileUser {
@@ -18,6 +19,16 @@ export interface ProfileUser {
   avatarUrl?: string;
   joinDate: string;
   karma: number;
+  joinedSubreddits: string[];
+}
+
+export interface Subreddit {
+  id: string;
+  name: string;
+  description: string;
+  creator: string;
+  memberCount: number;
+  createdAt: string;
 }
 
 export interface Post {
@@ -25,7 +36,7 @@ export interface Post {
   title: string;
   content?: string;
   author: { id: string, name: string };
-  subreddit: string;
+  subreddit: { id: string, name: string };
   votes: number;
   commentsCount: number;
   createdAt: string;

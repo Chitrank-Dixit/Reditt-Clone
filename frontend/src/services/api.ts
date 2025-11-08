@@ -1,4 +1,4 @@
-import type { Post, Comment, NewPostPayload, ProfileUser, UpdatePostPayload } from '../types';
+import type { Post, Comment, NewPostPayload, ProfileUser, UpdatePostPayload, Subreddit } from '../types';
 
 const API_BASE_URL = '/api';
 
@@ -22,7 +22,6 @@ async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
         throw error;
     }
     
-    // Handle responses that might not have a body (e.g., 204 No Content)
     const contentType = res.headers.get("content-type");
     if (contentType && contentType.indexOf("application/json") !== -1) {
         return res.json();
@@ -70,7 +69,6 @@ export const updatePost = (postId: string, postData: UpdatePostPayload): Promise
   });
 };
 
-// FIX: Add missing deletePost function.
 export const deletePost = (postId: string): Promise<void> => {
     return fetcher<void>(`/posts/${postId}`, {
         method: 'DELETE',
@@ -150,5 +148,29 @@ const fileToBase64 = (file: File): Promise<string> => {
         reader.readAsDataURL(file);
         reader.onload = () => resolve(reader.result as string);
         reader.onerror = error => reject(error);
+    });
+};
+
+// Subreddits
+export const getSubredditByName = (name: string): Promise<Subreddit> => {
+    return fetcher<Subreddit>(`/subreddits/${name}`);
+};
+
+export const getSubredditPosts = (name: string): Promise<Post[]> => {
+    return fetcher<Post[]>(`/subreddits/${name}/posts`);
+};
+
+export const joinSubreddit = (id: string): Promise<Subreddit> => {
+    return fetcher<Subreddit>(`/subreddits/${id}/join`, { method: 'POST' });
+};
+
+export const leaveSubreddit = (id: string): Promise<Subreddit> => {
+    return fetcher<Subreddit>(`/subreddits/${id}/leave`, { method: 'POST' });
+};
+
+export const createSubreddit = (data: { name: string, description: string }): Promise<Subreddit> => {
+    return fetcher<Subreddit>('/subreddits/create', {
+        method: 'POST',
+        body: JSON.stringify(data),
     });
 };

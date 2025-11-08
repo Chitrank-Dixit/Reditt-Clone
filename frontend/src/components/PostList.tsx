@@ -6,7 +6,8 @@ interface PostListProps {
   posts: PostType[];
   onUpdatePost: (updatedPost: PostType) => void;
   onDeletePost: (postId: string) => void;
-  emptyMessage?: string;
+  // FIX: Allow JSX elements for the empty message
+  emptyMessage?: React.ReactNode;
 }
 
 const PostList: React.FC<PostListProps> = ({ posts, onUpdatePost, onDeletePost, emptyMessage }) => {

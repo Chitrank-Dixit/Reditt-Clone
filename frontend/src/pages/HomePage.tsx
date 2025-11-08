@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import PostList from '../components/PostList';
 import Sidebar from '../components/Sidebar';
 import CreatePost from '../components/CreatePost';
@@ -31,7 +32,7 @@ const HomePage: React.FC = () => {
     };
 
     fetchPosts();
-  }, [sort]);
+  }, [sort, user]);
   
   const handlePostCreated = (newPost: PostType) => {
     setPosts(prevPosts => [newPost, ...prevPosts]);
@@ -49,6 +50,21 @@ const HomePage: React.FC = () => {
   const handlePostDeleted = (deletedPostId: string) => {
     setPosts(prevPosts => prevPosts.filter(p => p.id !== deletedPostId));
   };
+  
+  const getEmptyMessage = () => {
+      if(user) {
+          return (
+            <div className="text-center">
+                <p>Your personal feed is empty.</p>
+                <p className="mt-2">Join some communities to get started!</p>
+                <Link to="/r/reactjs" className="mt-4 inline-block bg-reddit-blue text-white font-bold py-2 px-4 rounded-full text-sm">
+                    Explore r/reactjs
+                </Link>
+            </div>
+          );
+      }
+      return 'There are no posts here. Maybe the server is sleeping?';
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -57,7 +73,7 @@ const HomePage: React.FC = () => {
         <SortBar currentSort={sort} onSortChange={setSort} />
         {loading && <LoadingSpinner />}
         {error && <div className="text-reddit-orange text-center p-4 bg-reddit-dark-soft rounded">{error}</div>}
-        {!loading && !error && <PostList posts={posts} onUpdatePost={handlePostUpdated} onDeletePost={handlePostDeleted} emptyMessage="No posts to show. Try creating one or changing the sort option." />}
+        {!loading && !error && <PostList posts={posts} onUpdatePost={handlePostUpdated} onDeletePost={handlePostDeleted} emptyMessage={getEmptyMessage()} />}
       </div>
       <div className="hidden md:block">
         <Sidebar />
