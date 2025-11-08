@@ -5,8 +5,8 @@ import HomePage from './pages/HomePage';
 import PostDetailPage from './pages/PostDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 import UserProfilePage from './pages/UserProfilePage';
-import ErrorBoundary from './components/ErrorBoundary';
 import EditProfilePage from './pages/EditProfilePage';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   return (

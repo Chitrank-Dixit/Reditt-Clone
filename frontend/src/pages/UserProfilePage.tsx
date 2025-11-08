@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import type { Post, Comment as CommentType, ProfileUser } from '../types';
 import { getPostsByUsername, getCommentsByUsername, getUserByUsername, uploadAvatar } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -29,6 +29,7 @@ const UserProfilePage: React.FC = () => {
   const [contentError, setContentError] = useState<string | null>(null);
 
   const [avatarUploadLoading, setAvatarUploadLoading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch user profile data
@@ -76,6 +77,7 @@ const UserProfilePage: React.FC = () => {
   }, [username, view, sort]);
 
   const handleAvatarClick = () => {
+    setAvatarError(null);
     fileInputRef.current?.click();
   };
 
@@ -83,12 +85,13 @@ const UserProfilePage: React.FC = () => {
     const file = event.target.files?.[0];
     if (file && username) {
       setAvatarUploadLoading(true);
+      setAvatarError(null);
       try {
         const { avatarUrl } = await uploadAvatar(username, file);
         setUserProfile(prev => prev ? { ...prev, avatarUrl } : null);
       } catch (error) {
         console.error("Failed to upload avatar", error);
-        alert("Failed to upload avatar. Please try again.");
+        setAvatarError("Failed to upload avatar. Please try again.");
       } finally {
         setAvatarUploadLoading(false);
       }
@@ -125,20 +128,24 @@ const UserProfilePage: React.FC = () => {
             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
         </div>
        
-        <h2 className="text-xl font-bold text-white">u/{user.name}</h2>
+        <h2 className="text-xl font-bold text-white mb-2">u/{user.name}</h2>
         
-        <Link to={`/user/${user.name}/edit`} className="w-full">
-            <button className="mt-4 w-full bg-reddit-border text-white font-bold py-2 px-4 rounded-full text-sm hover:bg-opacity-80 transition-colors duration-200">
-                Edit Profile
-            </button>
+        {avatarError && <p className="text-sm text-reddit-orange mb-4 text-center">{avatarError}</p>}
+
+        <Link 
+            to={`/user/${user.name}/edit`}
+            className="w-full bg-reddit-border text-white text-center font-bold py-2 px-4 rounded-full text-sm hover:bg-opacity-80 transition-colors duration-200 mb-4"
+        >
+            Edit Profile
         </Link>
         
-        <div className="w-full text-left mt-4">
-            {user.bio && <p className="text-sm text-reddit-text-primary mb-4">{user.bio}</p>}
+        <div className="w-full text-left">
+            <h3 className="font-bold text-xs uppercase text-reddit-text-secondary mb-2">About</h3>
+            <p className="text-sm text-reddit-text-primary">{user.bio || 'No bio provided.'}</p>
             
-            <div className="flex items-center space-x-2 text-sm text-reddit-text-secondary">
+            <div className="flex items-center space-x-2 text-sm text-reddit-text-secondary mt-4">
                 <CakeIcon className="h-5 w-5" />
-                <span>Cake day: {new Date(user.joinDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                <span>Cake day: {new Date(user.joinDate).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
             </div>
         </div>
     </div>
@@ -166,7 +173,7 @@ const UserProfilePage: React.FC = () => {
                         {comments.length > 0 ? (
                         comments.map(comment => <UserComment key={comment.id} comment={comment} />)
                         ) : (
-                        <p className="text-reddit-text-secondary text-center p-8">u/{username} hasn't commented on anything yet.</p>
+                        <p className="text-reddit-text-secondary text-center p-8">u/${username} hasn't commented on anything yet.</p>
                         )}
                     </div>
                     )

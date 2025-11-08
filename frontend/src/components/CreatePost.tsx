@@ -10,6 +10,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [subreddit, setSubreddit] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -23,7 +24,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
     setIsSubmitting(true);
     setError(null);
 
-    const payload: NewPostPayload = { title, content, subreddit };
+    const payload: NewPostPayload = { title, content, subreddit, imageUrl };
 
     try {
       const newPost = await createPost(payload);
@@ -32,6 +33,7 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
       setTitle('');
       setContent('');
       setSubreddit('');
+      setImageUrl('');
     } catch (err) {
       setError('Failed to create post. Please try again.');
       console.error(err);
@@ -62,6 +64,15 @@ const CreatePost: React.FC<CreatePostProps> = ({ onPostCreated }) => {
             onChange={(e) => setTitle(e.target.value)}
             className="w-full bg-reddit-dark border border-reddit-border rounded-md py-2 px-3 text-reddit-text-primary focus:outline-none focus:ring-1 focus:ring-white"
             required
+          />
+        </div>
+        <div>
+          <input
+            type="text"
+            placeholder="Image URL (optional)"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            className="w-full bg-reddit-dark border border-reddit-border rounded-md py-2 px-3 text-reddit-text-primary focus:outline-none focus:ring-1 focus:ring-white"
           />
         </div>
         <div>

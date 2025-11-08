@@ -64,7 +64,7 @@ router.get('/', async (req, res) => {
 // Create a new post
 router.post('/', async (req, res) => {
   try {
-    const { title, content, subreddit } = req.body;
+    const { title, content, subreddit, imageUrl } = req.body;
 
     if (!title || !subreddit) {
       return res.status(400).json({ message: 'Title and subreddit are required' });
@@ -79,6 +79,7 @@ router.post('/', async (req, res) => {
       subreddit,
       author: tempAuthor,
       votes: 1, // Start with one upvote from the author
+      imageUrl,
     });
 
     await newPost.save();
@@ -105,8 +106,19 @@ router.get('/:id', async (req, res) => {
 // Get comments for a post
 router.get('/:id/comments', async (req, res) => {
   try {
-    // This is a simplified implementation. A real app would use pagination and handle nested comments better.
-    const comments = await Comment.find({ post: req.params.id }).populate('replies');
+    const sort = (req.query.sort as string) || 'best'; // default to 'best'
+    
+    let sortOption: Record<string, 1 | -1> = { votes: -1 }; // best
+    if (sort === 'new') {
+      sortOption = { createdAt: -1 };
+    } else if (sort === 'old') {
+      sortOption = { createdAt: 1 };
+    }
+
+    const comments = await Comment.find({ post: req.params.id })
+      .sort(sortOption)
+      .populate('replies');
+      
     res.json(comments);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });

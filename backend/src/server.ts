@@ -1,5 +1,7 @@
-// FIX: To resolve Express typing issues, the import for express has been changed to a default import. Types like `Express`, `Request`, and `Response` are now accessed via the `express` namespace (e.g., `express.Express`). This corrects method overload resolution for `app.use` and ensures methods on `Response` (like `send`) are available.
-import express from 'express';
+
+// FIX: To resolve Express typing issues, use `import = require()` syntax for CommonJS module compatibility.
+// This corrects method overload resolution for `app.use` and ensures methods on `Response` (like `send`) are available.
+import express = require('express');
 import cors from 'cors';
 import 'dotenv/config';
 import connectDB from './db';

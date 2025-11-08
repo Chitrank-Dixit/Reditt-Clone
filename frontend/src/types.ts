@@ -43,4 +43,5 @@ export interface NewPostPayload {
   title: string;
   content: string;
   subreddit: string;
+  imageUrl?: string;
 }
