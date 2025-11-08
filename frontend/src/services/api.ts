@@ -70,6 +70,13 @@ export const updatePost = (postId: string, postData: UpdatePostPayload): Promise
   });
 };
 
+// FIX: Add missing deletePost function.
+export const deletePost = (postId: string): Promise<void> => {
+    return fetcher<void>(`/posts/${postId}`, {
+        method: 'DELETE',
+    });
+};
+
 
 // Comments
 export const getCommentsByPostId = (postId: string, sort: string): Promise<Comment[]> => {
@@ -80,6 +87,19 @@ export const replyToComment = (commentId: string, content: string): Promise<Comm
     return fetcher<Comment>(`/comments/${commentId}/reply`, {
         method: 'POST',
         body: JSON.stringify({ content }),
+    });
+};
+
+export const updateComment = (commentId: string, content: string): Promise<Comment> => {
+    return fetcher<Comment>(`/comments/${commentId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ content }),
+    });
+};
+
+export const deleteComment = (commentId: string): Promise<void> => {
+    return fetcher<void>(`/comments/${commentId}`, {
+        method: 'DELETE',
     });
 };
 

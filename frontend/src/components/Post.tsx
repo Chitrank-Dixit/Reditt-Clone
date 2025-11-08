@@ -9,14 +9,17 @@ import { CommentIcon } from './icons/CommentIcon';
 import { ShareIcon } from './icons/ShareIcon';
 import { SaveIcon } from './icons/SaveIcon';
 import { useAuth } from '../hooks/useAuth';
+import { EditIcon } from './icons/EditIcon';
+import { DeleteIcon } from './icons/DeleteIcon';
 
 interface PostProps {
   post: PostType;
   isLink?: boolean;
   onUpdatePost?: (updatedPost: PostType) => void;
+  onDeletePost?: (postId: string) => void;
 }
 
-const Post: React.FC<PostProps> = ({ post: initialPost, isLink = true, onUpdatePost }) => {
+const Post: React.FC<PostProps> = ({ post: initialPost, isLink = true, onUpdatePost, onDeletePost }) => {
   const [post, setPost] = useState(initialPost);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [comments, setComments] = useState<CommentType[]>([]);
@@ -96,6 +99,23 @@ const Post: React.FC<PostProps> = ({ post: initialPost, isLink = true, onUpdateP
     }
   };
 
+  const handleCommentDeleted = (deletedCommentId: string) => {
+    const removeComment = (comments: CommentType[], idToRemove: string): CommentType[] => {
+        return comments
+            .filter(comment => comment.id !== idToRemove)
+            .map(comment => ({
+                ...comment,
+                replies: removeComment(comment.replies, idToRemove)
+            }));
+    };
+    setComments(prevComments => removeComment(prevComments, deletedCommentId));
+    // Also update post's comment count locally for immediate feedback
+    setPost(prevPost => ({
+        ...prevPost,
+        commentsCount: prevPost.commentsCount > 0 ? prevPost.commentsCount - 1 : 0
+    }));
+};
+
   const PostContent = () => (
     <>
       <div className="p-4">
@@ -149,9 +169,12 @@ const Post: React.FC<PostProps> = ({ post: initialPost, isLink = true, onUpdateP
           <span>Save</span>
         </div>
         {user?.id === post.author.id && !isEditing && (
-            <button onClick={handleEdit} className="flex items-center space-x-1 hover:bg-reddit-border p-2 rounded cursor-pointer">
-                <span>Edit</span>
-            </button>
+            <>
+                <button onClick={handleEdit} className="flex items-center space-x-1 hover:bg-reddit-border p-2 rounded cursor-pointer">
+                    <EditIcon className="h-4 w-4" />
+                    <span>Edit</span>
+                </button>
+            </>
         )}
       </div>
       {isEditing && (
@@ -187,7 +210,7 @@ const Post: React.FC<PostProps> = ({ post: initialPost, isLink = true, onUpdateP
                     comments.length > 0 ? (
                         <div className="space-y-6">
                             {comments.map(comment => (
-                                <Comment key={comment.id} comment={comment} />
+                                <Comment key={comment.id} comment={comment} onDelete={handleCommentDeleted} />
                             ))}
                         </div>
                     ) : (

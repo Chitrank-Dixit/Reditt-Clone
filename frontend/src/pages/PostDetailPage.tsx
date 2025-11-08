@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import type { Post as PostType, Comment as CommentType } from '../types';
-import { getPostById, getCommentsByPostId } from '../services/api';
+import { getPostById, getCommentsByPostId, deletePost } from '../services/api';
 import Post from '../components/Post';
 import Comment from '../components/Comment';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -9,6 +9,7 @@ import CommentSortBar from '../components/CommentSortBar';
 
 const PostDetailPage: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
+  const navigate = useNavigate();
   const [post, setPost] = useState<PostType | null>(null);
   const [comments, setComments] = useState<CommentType[]>([]);
   const [loadingPost, setLoadingPost] = useState(true);
@@ -60,6 +61,31 @@ const PostDetailPage: React.FC = () => {
     setPost(updatedPost);
   };
 
+  const handlePostDelete = (deletedPostId: string) => {
+    console.log(`Post ${deletedPostId} deleted, navigating home.`);
+    navigate('/');
+  };
+
+  const handleCommentDeleted = (deletedCommentId: string) => {
+      const removeComment = (comments: CommentType[], idToRemove: string): CommentType[] => {
+        return comments
+            .filter(comment => comment.id !== idToRemove)
+            .map(comment => ({
+                ...comment,
+                replies: removeComment(comment.replies, idToRemove)
+            }));
+    };
+    setComments(prevComments => removeComment(prevComments, deletedCommentId));
+    
+    // Update post's comment count locally
+    if (post) {
+        setPost({
+            ...post,
+            commentsCount: post.commentsCount > 0 ? post.commentsCount - 1 : 0
+        });
+    }
+  };
+
   if (loadingPost) {
     return <LoadingSpinner />;
   }
@@ -75,7 +101,7 @@ const PostDetailPage: React.FC = () => {
 
   return (
     <div>
-      <Post post={post} onUpdatePost={handlePostUpdate} isLink={false} />
+      <Post post={post} onUpdatePost={handlePostUpdate} onDeletePost={handlePostDelete} isLink={false} />
       <div className="mt-6 bg-reddit-dark-soft border border-reddit-border rounded-md p-4">
         <h3 className="text-lg font-bold text-white mb-4">Comments ({post.commentsCount})</h3>
         
@@ -86,7 +112,7 @@ const PostDetailPage: React.FC = () => {
         ) : (
           <div className="space-y-6">
             {comments.length > 0 ? comments.map(comment => (
-              <Comment key={comment.id} comment={comment} />
+              <Comment key={comment.id} comment={comment} onDelete={handleCommentDeleted} />
             )) : (
               <p className="text-reddit-text-secondary text-center py-4">No comments yet.</p>
             )}

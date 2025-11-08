@@ -1,4 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
+import type { NextFunction } from 'express';
+import * as express from 'express';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_default_jwt_secret';
@@ -9,7 +10,8 @@ interface JwtPayload {
   };
 }
 
-export default function(req: Request, res: Response, next: NextFunction) {
+// FIX: Change type annotations to use the express namespace to fix type resolution issues.
+export default function(req: express.Request, res: express.Response, next: NextFunction) {
   const authHeader = req.header('Authorization');
   if (!authHeader) {
     return res.status(401).json({ message: 'No token, authorization denied' });
