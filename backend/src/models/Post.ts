@@ -9,11 +9,13 @@ export interface IPost extends Document {
   commentsCount: number;
   createdAt: Date;
   imageUrl?: string;
+  postType: 'text' | 'link';
+  linkUrl?: string;
 }
 
 const PostSchema = new Schema({
   title: { type: String, required: true },
-  content: { type: String, required: true },
+  content: { type: String },
   author: {
     id: { type: String, required: true },
     name: { type: String, required: true },
@@ -22,6 +24,8 @@ const PostSchema = new Schema({
   votes: { type: Number, default: 0 },
   commentsCount: { type: Number, default: 0 },
   imageUrl: { type: String },
+  postType: { type: String, enum: ['text', 'link'], default: 'text' },
+  linkUrl: { type: String },
 }, {
     timestamps: true
 });

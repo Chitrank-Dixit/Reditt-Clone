@@ -23,7 +23,7 @@ export interface ProfileUser {
 export interface Post {
   id: string;
   title: string;
-  content: string;
+  content?: string;
   author: { id: string, name: string };
   subreddit: string;
   votes: number;
@@ -31,6 +31,8 @@ export interface Post {
   createdAt: string;
   updatedAt: string;
   imageUrl?: string;
+  postType: 'text' | 'link';
+  linkUrl?: string;
 }
 
 export interface Comment {
@@ -49,9 +51,11 @@ export interface Comment {
 
 export interface NewPostPayload {
   title: string;
-  content: string;
   subreddit: string;
+  content?: string;
   imageUrl?: string;
+  postType: 'text' | 'link';
+  linkUrl?: string;
 }
 
 export interface UpdatePostPayload {

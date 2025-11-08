@@ -89,6 +89,10 @@ const UserProfilePage: React.FC = () => {
       prevPosts.map(p => (p.id === updatedPost.id ? updatedPost : p))
     );
   };
+  
+  const handlePostDeleted = (deletedPostId: string) => {
+    setPosts(prevPosts => prevPosts.filter(p => p.id !== deletedPostId));
+  };
 
   const handleAvatarClick = () => {
     setAvatarError(null);
@@ -243,7 +247,12 @@ const UserProfilePage: React.FC = () => {
                     view === 'posts' ? (
                     <div className="space-y-4">
                         <SortBar currentSort={sort} onSortChange={setSort} />
-                        <PostList posts={posts} onUpdatePost={handlePostUpdated} emptyMessage={`u/${username} hasn't posted anything yet.`} />
+                        <PostList 
+                            posts={posts} 
+                            onUpdatePost={handlePostUpdated} 
+                            onDeletePost={handlePostDeleted}
+                            emptyMessage={`u/${username} hasn't posted anything yet.`} 
+                        />
                     </div>
                     ) : (
                     <div className="space-y-4">

@@ -5,10 +5,11 @@ import Post from './Post';
 interface PostListProps {
   posts: PostType[];
   onUpdatePost: (updatedPost: PostType) => void;
+  onDeletePost: (postId: string) => void;
   emptyMessage?: string;
 }
 
-const PostList: React.FC<PostListProps> = ({ posts, onUpdatePost, emptyMessage }) => {
+const PostList: React.FC<PostListProps> = ({ posts, onUpdatePost, onDeletePost, emptyMessage }) => {
   if (posts.length === 0) {
     return (
       <div className="text-center text-reddit-text-secondary p-8 bg-reddit-dark-soft rounded-md">
@@ -20,7 +21,12 @@ const PostList: React.FC<PostListProps> = ({ posts, onUpdatePost, emptyMessage }
   return (
     <div className="space-y-4">
       {posts.map(post => (
-        <Post key={post.id} post={post} onUpdatePost={onUpdatePost} />
+        <Post 
+          key={post.id} 
+          post={post} 
+          onUpdatePost={onUpdatePost} 
+          onDeletePost={onDeletePost} 
+        />
       ))}
     </div>
   );

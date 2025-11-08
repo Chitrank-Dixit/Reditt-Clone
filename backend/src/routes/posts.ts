@@ -17,7 +17,10 @@ router.get('/', async (req, res) => {
       posts = await Post.find().sort({ createdAt: -1 });
     } else if (sort === 'top') {
       posts = await Post.find().sort({ votes: -1 });
-    } else { // 'hot'
+    } else if (sort === 'controversial') {
+      posts = await Post.find().sort({ commentsCount: -1, votes: 1 });
+    }
+    else { // 'hot'
       const epoch = new Date('1970-01-01');
       const postsWithScore = await Post.aggregate([
         {
@@ -31,6 +34,8 @@ router.get('/', async (req, res) => {
             imageUrl: 1,
             createdAt: 1,
             updatedAt: 1,
+            postType: 1,
+            linkUrl: 1,
             score: {
               $add: [
                 { $log10: { $max: [1, { $abs: '$votes' }] } },
@@ -63,7 +68,7 @@ router.get('/', async (req, res) => {
 // Create a new post
 router.post('/', auth, async (req, res) => {
   try {
-    const { title, content, subreddit, imageUrl } = req.body;
+    const { title, content, subreddit, imageUrl, postType, linkUrl } = req.body;
 
     if (!title || !subreddit) {
       return res.status(400).json({ message: 'Title and subreddit are required' });
@@ -81,6 +86,8 @@ router.post('/', auth, async (req, res) => {
       author: { id: user.id, name: user.name },
       votes: 1,
       imageUrl,
+      postType,
+      linkUrl,
     });
 
     await newPost.save();
@@ -131,6 +138,33 @@ router.put('/:id', auth, async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 });
+
+// Delete a post
+router.delete('/:id', auth, async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+        
+        if (post.author.id.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'User not authorized to delete this post' });
+        }
+        
+        // Delete all comments associated with the post
+        await Comment.deleteMany({ post: post._id });
+        
+        // Delete the post itself
+        await Post.findByIdAndDelete(req.params.id);
+        
+        res.status(204).send();
+
+    } catch (error) {
+        console.error('Error deleting post:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 
 // Get comments for a post
 router.get('/:id/comments', async (req, res) => {

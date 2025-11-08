@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import type { Post as PostType, Comment as CommentType, UpdatePostPayload } from '../types';
-import { getCommentsByPostId, updatePost } from '../services/api';
+import { getCommentsByPostId, updatePost, deletePost } from '../services/api';
 import VoteButtons from './VoteButtons';
 import Comment from './Comment';
 import LoadingSpinner from './LoadingSpinner';
@@ -11,6 +11,7 @@ import { SaveIcon } from './icons/SaveIcon';
 import { useAuth } from '../hooks/useAuth';
 import { EditIcon } from './icons/EditIcon';
 import { DeleteIcon } from './icons/DeleteIcon';
+import { LinkIcon } from './icons/LinkIcon';
 
 interface PostProps {
   post: PostType;
@@ -28,11 +29,12 @@ const Post: React.FC<PostProps> = ({ post: initialPost, isLink = true, onUpdateP
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(post.title);
-  const [editedContent, setEditedContent] = useState(post.content);
+  const [editedContent, setEditedContent] = useState(post.content || '');
   const [editError, setEditError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const { user } = useAuth();
+  const isAuthor = user?.id === post.author.id;
 
   useEffect(() => {
     setPost(initialPost);
@@ -69,14 +71,28 @@ const Post: React.FC<PostProps> = ({ post: initialPost, isLink = true, onUpdateP
   const handleEdit = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setEditedTitle(post.title);
+    setEditedContent(post.content || '');
     setIsEditing(true);
   };
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    setEditedTitle(post.title);
-    setEditedContent(post.content);
     setEditError(null);
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onDeletePost && window.confirm('Are you sure you want to delete this post? This cannot be undone.')) {
+        try {
+            await deletePost(post.id);
+            onDeletePost(post.id);
+        } catch (err) {
+            console.error('Failed to delete post:', err);
+            alert('Failed to delete post. Please try again.');
+        }
+    }
   };
 
   const handleSaveEdit = async () => {
@@ -143,6 +159,12 @@ const Post: React.FC<PostProps> = ({ post: initialPost, isLink = true, onUpdateP
         ) : (
             <>
                 <h2 className="text-xl font-bold text-reddit-text-primary mb-2">{post.title}</h2>
+                {post.postType === 'link' && post.linkUrl && (
+                     <a href={post.linkUrl} target="_blank" rel="noopener noreferrer" className="text-reddit-blue text-sm flex items-center space-x-1 hover:underline mb-2">
+                        <span>{post.linkUrl}</span>
+                        <LinkIcon className="h-4 w-4" />
+                     </a>
+                )}
                 {post.imageUrl && (
                     <div className="my-3 max-h-96 overflow-hidden rounded-lg flex justify-center items-center bg-black">
                         <img src={post.imageUrl} alt={post.title} className="max-h-96 object-contain" />
@@ -168,11 +190,15 @@ const Post: React.FC<PostProps> = ({ post: initialPost, isLink = true, onUpdateP
           <SaveIcon className="h-5 w-5" />
           <span>Save</span>
         </div>
-        {user?.id === post.author.id && !isEditing && (
+        {isAuthor && !isEditing && (
             <>
                 <button onClick={handleEdit} className="flex items-center space-x-1 hover:bg-reddit-border p-2 rounded cursor-pointer">
                     <EditIcon className="h-4 w-4" />
                     <span>Edit</span>
+                </button>
+                <button onClick={handleDelete} className="flex items-center space-x-1 hover:bg-reddit-border p-2 rounded cursor-pointer text-reddit-orange">
+                    <DeleteIcon className="h-4 w-4" />
+                    <span>Delete</span>
                 </button>
             </>
         )}

@@ -1,5 +1,5 @@
-import express from 'express';
-import type { Request, Response } from 'express';
+// FIX: Unify express imports and explicitly import Request and Response to resolve type conflicts.
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import connectDB from './db';
@@ -20,8 +20,8 @@ app.use(express.json());
 // API Routes
 app.use('/api', apiRoutes);
 
-// FIX: Remove explicit Request and Response types to allow for correct type inference from Express.
-app.get('/', (req, res) => {
+// FIX: Explicitly type Request and Response to resolve type ambiguity that was causing errors in middleware type checking.
+app.get('/', (req: Request, res: Response) => {
   res.send('Reddit Clone API is running...');
 });
 

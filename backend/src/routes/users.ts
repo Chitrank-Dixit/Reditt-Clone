@@ -32,7 +32,10 @@ router.get('/:username/posts', async (req, res) => {
             posts = await Post.find({ 'author.name': username }).sort({ createdAt: -1 });
         } else if (sort === 'top') {
             posts = await Post.find({ 'author.name': username }).sort({ votes: -1 });
-        } else { // 'hot'
+        } else if (sort === 'controversial') {
+            posts = await Post.find({ 'author.name': username }).sort({ commentsCount: -1, votes: 1 });
+        }
+        else { // 'hot'
             const epoch = new Date('1970-01-01');
             const postsWithScore = await Post.aggregate([
                 { $match: { 'author.name': username } },
@@ -47,6 +50,8 @@ router.get('/:username/posts', async (req, res) => {
                         imageUrl: 1,
                         createdAt: 1,
                         updatedAt: 1,
+                        postType: 1,
+                        linkUrl: 1,
                         score: {
                             $add: [
                                 { $log10: { $max: [1, { $abs: '$votes' }] } },
