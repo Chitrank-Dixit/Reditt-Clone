@@ -10,6 +10,7 @@ import SignUpPage from './pages/SignUpPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import SubredditPage from './pages/SubredditPage';
 import CreateSubredditPage from './pages/CreateSubredditPage';
+import SearchPage from './pages/SearchPage';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
               <Route path="/subreddits/create" element={<CreateSubredditPage />} />
               <Route path="/post/:postId" element={<PostDetailPage />} />
               <Route path="/user/:username" element={<UserProfilePage />} />
+              <Route path="/search" element={<SearchPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </ErrorBoundary>

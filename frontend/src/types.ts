@@ -73,3 +73,9 @@ export interface UpdatePostPayload {
   title: string;
   content: string;
 }
+
+export interface SearchResults {
+  posts: Post[];
+  comments: Comment[];
+  subreddits: Subreddit[];
+}

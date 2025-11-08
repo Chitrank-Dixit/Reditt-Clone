@@ -1,4 +1,4 @@
-import type { Post, Comment, NewPostPayload, ProfileUser, UpdatePostPayload, Subreddit } from '../types';
+import type { Post, Comment, NewPostPayload, ProfileUser, UpdatePostPayload, Subreddit, SearchResults } from '../types';
 
 const API_BASE_URL = '/api';
 
@@ -173,4 +173,9 @@ export const createSubreddit = (data: { name: string, description: string }): Pr
         method: 'POST',
         body: JSON.stringify(data),
     });
+};
+
+// Search
+export const searchAll = (query: string): Promise<SearchResults> => {
+    return fetcher<SearchResults>(`/search?q=${encodeURIComponent(query)}`);
 };
