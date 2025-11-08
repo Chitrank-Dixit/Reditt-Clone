@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import type { Post, Comment as CommentType, ProfileUser } from '../types';
-import { getPostsByUsername, getCommentsByUsername, getUserByUsername, uploadAvatar } from '../services/api';
+import { getPostsByUsername, getCommentsByUsername, getUserByUsername, uploadAvatar, updateUserProfile } from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
 import PostList from '../components/PostList';
 import UserComment from '../components/UserComment';
@@ -9,6 +9,7 @@ import SortBar from '../components/SortBar';
 import { UserIcon } from '../components/icons/UserIcon';
 import { CakeIcon } from '../components/icons/CakeIcon';
 import { CameraIcon } from '../components/icons/CameraIcon';
+import { EditIcon } from '../components/icons/EditIcon';
 
 type View = 'posts' | 'comments';
 
@@ -31,6 +32,12 @@ const UserProfilePage: React.FC = () => {
   const [avatarUploadLoading, setAvatarUploadLoading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [editedBio, setEditedBio] = useState('');
+  const [isSavingBio, setIsSavingBio] = useState(false);
+  const [bioError, setBioError] = useState<string | null>(null);
+
 
   // Fetch user profile data
   useEffect(() => {
@@ -76,6 +83,12 @@ const UserProfilePage: React.FC = () => {
     fetchContent();
   }, [username, view, sort]);
 
+  const handlePostUpdated = (updatedPost: Post) => {
+    setPosts(prevPosts =>
+      prevPosts.map(p => (p.id === updatedPost.id ? updatedPost : p))
+    );
+  };
+
   const handleAvatarClick = () => {
     setAvatarError(null);
     fileInputRef.current?.click();
@@ -87,6 +100,9 @@ const UserProfilePage: React.FC = () => {
       setAvatarUploadLoading(true);
       setAvatarError(null);
       try {
+        // Using the backend endpoint now
+        const formData = new FormData();
+        formData.append('avatar', file);
         const { avatarUrl } = await uploadAvatar(username, file);
         setUserProfile(prev => prev ? { ...prev, avatarUrl } : null);
       } catch (error) {
@@ -97,6 +113,32 @@ const UserProfilePage: React.FC = () => {
       }
     }
   };
+
+    const handleEditBioClick = () => {
+        setEditedBio(userProfile?.bio || '');
+        setIsEditingBio(true);
+        setBioError(null);
+    };
+
+    const handleCancelEditBio = () => {
+        setIsEditingBio(false);
+    };
+
+    const handleSaveBio = async () => {
+        if (!username || !userProfile) return;
+        setIsSavingBio(true);
+        setBioError(null);
+        try {
+            const updatedUser = await updateUserProfile(username, { bio: editedBio });
+            setUserProfile(updatedUser);
+            setIsEditingBio(false);
+        } catch (error) {
+            console.error("Failed to save bio", error);
+            setBioError("Failed to save bio. Please try again.");
+        } finally {
+            setIsSavingBio(false);
+        }
+    };
 
   const TabButton: React.FC<{ tabName: View; label: string }> = ({ tabName, label }) => (
     <button
@@ -128,20 +170,42 @@ const UserProfilePage: React.FC = () => {
             <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
         </div>
        
-        <h2 className="text-xl font-bold text-white mb-2">u/{user.name}</h2>
+        <h2 className="text-xl font-bold text-white mb-4">u/{user.name}</h2>
         
         {avatarError && <p className="text-sm text-reddit-orange mb-4 text-center">{avatarError}</p>}
-
-        <Link 
-            to={`/user/${user.name}/edit`}
-            className="w-full bg-reddit-border text-white text-center font-bold py-2 px-4 rounded-full text-sm hover:bg-opacity-80 transition-colors duration-200 mb-4"
-        >
-            Edit Profile
-        </Link>
         
         <div className="w-full text-left">
-            <h3 className="font-bold text-xs uppercase text-reddit-text-secondary mb-2">About</h3>
-            <p className="text-sm text-reddit-text-primary">{user.bio || 'No bio provided.'}</p>
+             <div className="flex justify-between items-center mb-2">
+                <h3 className="font-bold text-xs uppercase text-reddit-text-secondary">About</h3>
+                {!isEditingBio && (
+                    <button onClick={handleEditBioClick} className="text-reddit-text-secondary hover:text-white p-1 rounded-full">
+                        <EditIcon className="h-4 w-4" />
+                    </button>
+                )}
+            </div>
+
+            {isEditingBio ? (
+                <div className="space-y-2">
+                    <textarea
+                        value={editedBio}
+                        onChange={(e) => setEditedBio(e.target.value)}
+                        rows={4}
+                        className="w-full bg-reddit-dark border border-reddit-border rounded-md py-2 px-3 text-sm text-reddit-text-primary focus:outline-none focus:ring-1 focus:ring-white"
+                        placeholder="Tell us a little about yourself"
+                    />
+                    {bioError && <p className="text-xs text-reddit-orange">{bioError}</p>}
+                    <div className="flex justify-end space-x-2">
+                        <button onClick={handleCancelEditBio} className="text-reddit-text-secondary font-bold py-1 px-3 text-xs rounded-full hover:bg-reddit-border">
+                            Cancel
+                        </button>
+                        <button onClick={handleSaveBio} disabled={isSavingBio} className="bg-reddit-blue text-white font-bold py-1 px-4 text-xs rounded-full hover:bg-opacity-80 disabled:bg-gray-500">
+                            {isSavingBio ? 'Saving...' : 'Save'}
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <p className="text-sm text-reddit-text-primary">{user.bio || 'No bio provided.'}</p>
+            )}
             
             <div className="flex items-center space-x-2 text-sm text-reddit-text-secondary mt-4">
                 <CakeIcon className="h-5 w-5" />
@@ -166,7 +230,7 @@ const UserProfilePage: React.FC = () => {
                     view === 'posts' ? (
                     <div className="space-y-4">
                         <SortBar currentSort={sort} onSortChange={setSort} />
-                        <PostList posts={posts} emptyMessage={`u/${username} hasn't posted anything yet.`} />
+                        <PostList posts={posts} onUpdatePost={handlePostUpdated} emptyMessage={`u/${username} hasn't posted anything yet.`} />
                     </div>
                     ) : (
                     <div className="space-y-4">

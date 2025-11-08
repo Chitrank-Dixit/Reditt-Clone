@@ -5,7 +5,6 @@ import HomePage from './pages/HomePage';
 import PostDetailPage from './pages/PostDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 import UserProfilePage from './pages/UserProfilePage';
-import EditProfilePage from './pages/EditProfilePage';
 import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
@@ -19,7 +18,6 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/post/:postId" element={<PostDetailPage />} />
               <Route path="/user/:username" element={<UserProfilePage />} />
-              <Route path="/user/:username/edit" element={<EditProfilePage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </ErrorBoundary>

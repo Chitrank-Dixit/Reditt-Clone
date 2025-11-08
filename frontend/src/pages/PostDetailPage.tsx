@@ -56,6 +56,10 @@ const PostDetailPage: React.FC = () => {
     fetchComments();
   }, [postId, commentSort]);
 
+  const handlePostUpdate = (updatedPost: PostType) => {
+    setPost(updatedPost);
+  };
+
   if (loadingPost) {
     return <LoadingSpinner />;
   }
@@ -71,7 +75,7 @@ const PostDetailPage: React.FC = () => {
 
   return (
     <div>
-      <Post post={post} isLink={false} />
+      <Post post={post} onUpdatePost={handlePostUpdate} isLink={false} />
       <div className="mt-6 bg-reddit-dark-soft border border-reddit-border rounded-md p-4">
         <h3 className="text-lg font-bold text-white mb-4">Comments ({post.commentsCount})</h3>
         

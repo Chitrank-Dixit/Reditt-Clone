@@ -39,6 +39,12 @@ const HomePage: React.FC = () => {
     }
   };
 
+  const handlePostUpdated = (updatedPost: PostType) => {
+    setPosts(prevPosts =>
+      prevPosts.map(p => (p.id === updatedPost.id ? updatedPost : p))
+    );
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div className="md:col-span-2 space-y-4">
@@ -46,7 +52,7 @@ const HomePage: React.FC = () => {
         <SortBar currentSort={sort} onSortChange={setSort} />
         {loading && <LoadingSpinner />}
         {error && <div className="text-reddit-orange text-center p-4 bg-reddit-dark-soft rounded">{error}</div>}
-        {!loading && !error && <PostList posts={posts} emptyMessage="No posts to show. Try creating one or changing the sort option." />}
+        {!loading && !error && <PostList posts={posts} onUpdatePost={handlePostUpdated} emptyMessage="No posts to show. Try creating one or changing the sort option." />}
       </div>
       <div className="hidden md:block">
         <Sidebar />

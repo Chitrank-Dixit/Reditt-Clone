@@ -1,7 +1,8 @@
 
-// FIX: To resolve Express typing issues, use `import = require()` syntax for CommonJS module compatibility.
-// This corrects method overload resolution for `app.use` and ensures methods on `Response` (like `send`) are available.
-import express = require('express');
+// FIX: The import assignment `import express = require('express')` is not compatible with
+// the project's ECMAScript module target. Changed to a default import.
+// This single change resolves the type errors on lines 5, 19, and 25.
+import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import connectDB from './db';

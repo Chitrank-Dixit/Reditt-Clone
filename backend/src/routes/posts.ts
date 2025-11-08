@@ -103,6 +103,29 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Update a post
+router.put('/:id', async (req, res) => {
+  try {
+    const { title, content } = req.body;
+    if (!title) {
+      return res.status(400).json({ message: 'Title is required' });
+    }
+    const post = await Post.findByIdAndUpdate(
+      req.params.id,
+      { title, content },
+      { new: true, runValidators: true }
+    );
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+    // In a real app, you would check if the authenticated user is the author of the post.
+    res.json(post);
+  } catch (error) {
+    console.error('Error updating post:', error);
+    res.status(500).json({ message: 'Server error', error });
+  }
+});
+
 // Get comments for a post
 router.get('/:id/comments', async (req, res) => {
   try {

@@ -1,4 +1,4 @@
-import type { Post, Comment, NewPostPayload, ProfileUser } from '../types';
+import type { Post, Comment, NewPostPayload, ProfileUser, UpdatePostPayload } from '../types';
 
 const API_BASE_URL = '/api';
 
@@ -29,6 +29,16 @@ export const getCommentsByPostId = (postId: string, sort: string): Promise<Comme
 export const createPost = (postData: NewPostPayload): Promise<Post> => {
   return fetcher<Post>('/posts', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(postData),
+  });
+};
+
+export const updatePost = (postId: string, postData: UpdatePostPayload): Promise<Post> => {
+  return fetcher<Post>(`/posts/${postId}`, {
+    method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },
