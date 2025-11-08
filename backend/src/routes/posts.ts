@@ -2,6 +2,7 @@ import { Router } from 'express';
 import Post from '../models/Post';
 import Comment from '../models/Comment';
 import User from '../models/User';
+import auth from '../middleware/auth';
 
 const router = Router();
 
@@ -17,8 +18,6 @@ router.get('/', async (req, res) => {
     } else if (sort === 'top') {
       posts = await Post.find().sort({ votes: -1 });
     } else { // 'hot'
-      // A simplified version of Reddit's hot sort algorithm.
-      // Score = log10(abs(votes)) + (date_in_seconds / 45000)
       const epoch = new Date('1970-01-01');
       const postsWithScore = await Post.aggregate([
         {
@@ -38,7 +37,7 @@ router.get('/', async (req, res) => {
                 {
                   $divide: [
                     { $subtract: ['$createdAt', epoch] },
-                    45000 * 1000, // 45000 seconds in milliseconds
+                    45000 * 1000, 
                   ],
                 },
               ],
@@ -48,7 +47,6 @@ router.get('/', async (req, res) => {
         { $sort: { score: -1 } },
       ]);
       
-      // Aggregate returns plain objects; manually transform to match Mongoose toJSON
       posts = postsWithScore.map(p => {
         const { _id, score, ...rest } = p;
         return { ...rest, id: _id.toString() };
@@ -63,7 +61,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create a new post
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
   try {
     const { title, content, subreddit, imageUrl } = req.body;
 
@@ -71,15 +69,17 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Title and subreddit are required' });
     }
 
-    // In a real app, author would come from authenticated user session
-    const tempAuthor = { id: 'u1', name: 'dev_user' }; 
+    const user = await User.findById(req.user.id);
+    if (!user) {
+        return res.status(404).json({ message: 'Authenticated user not found' });
+    }
 
     const newPost = new Post({
       title,
       content,
       subreddit,
-      author: tempAuthor,
-      votes: 1, // Start with one upvote from the author
+      author: { id: user.id, name: user.name },
+      votes: 1,
       imageUrl,
     });
 
@@ -105,21 +105,26 @@ router.get('/:id', async (req, res) => {
 });
 
 // Update a post
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, async (req, res) => {
   try {
     const { title, content } = req.body;
     if (!title) {
       return res.status(400).json({ message: 'Title is required' });
     }
-    const post = await Post.findByIdAndUpdate(
-      req.params.id,
-      { title, content },
-      { new: true, runValidators: true }
-    );
+
+    const post = await Post.findById(req.params.id);
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
-    // In a real app, you would check if the authenticated user is the author of the post.
+
+    if (post.author.id.toString() !== req.user.id) {
+        return res.status(403).json({ message: 'User not authorized to edit this post' });
+    }
+
+    post.title = title;
+    post.content = content;
+    await post.save();
+    
     res.json(post);
   } catch (error) {
     console.error('Error updating post:', error);
@@ -130,7 +135,7 @@ router.put('/:id', async (req, res) => {
 // Get comments for a post
 router.get('/:id/comments', async (req, res) => {
   try {
-    const sort = (req.query.sort as string) || 'best'; // default to 'best'
+    const sort = (req.query.sort as string) || 'best';
     
     let sortOption: Record<string, 1 | -1> = { votes: -1 }; // best
     if (sort === 'new') {

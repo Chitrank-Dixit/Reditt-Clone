@@ -4,6 +4,13 @@ export interface User {
   avatarUrl?: string;
 }
 
+// User object derived from the JWT token
+export interface AuthUser {
+    id: string;
+    name: string;
+    iat: number;
+}
+
 export interface ProfileUser {
   id: string;
   name: string;
@@ -17,7 +24,7 @@ export interface Post {
   id: string;
   title: string;
   content: string;
-  author: User;
+  author: { id: string, name: string };
   subreddit: string;
   votes: number;
   commentsCount: number;
@@ -29,7 +36,7 @@ export interface Post {
 export interface Comment {
   id: string;
   content: string;
-  author: User;
+  author: { id: string, name: string };
   votes: number;
   createdAt: string;
   updatedAt: string;

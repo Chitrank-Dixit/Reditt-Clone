@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { UpvoteIcon, DownvoteIcon } from './icons/VoteIcons';
 import { voteOnEntity } from '../services/api';
+import type { Post, Comment as CommentType } from '../types';
 
 interface VoteButtonsProps {
   initialVotes: number;
   postId?: string;
   commentId?: string;
+  onUpdate?: (updatedEntity: Post | CommentType) => void;
 }
 
-const VoteButtons: React.FC<VoteButtonsProps> = ({ initialVotes, postId, commentId }) => {
+const VoteButtons: React.FC<VoteButtonsProps> = ({ initialVotes, postId, commentId, onUpdate }) => {
   const [votes, setVotes] = useState(initialVotes);
   const [voteStatus, setVoteStatus] = useState<'up' | 'down' | null>(null);
 
@@ -40,7 +42,10 @@ const VoteButtons: React.FC<VoteButtonsProps> = ({ initialVotes, postId, comment
       if (!entityId) throw new Error("No ID provided for voting");
       
       const entityType = postId ? 'post' : 'comment';
-      await voteOnEntity(entityId, entityType, newStatus);
+      const updatedEntity = await voteOnEntity(entityId, entityType, newStatus);
+      if (onUpdate) {
+        onUpdate(updatedEntity);
+      }
     } catch (error) {
       console.error('Failed to vote:', error);
       // Revert optimistic update on failure

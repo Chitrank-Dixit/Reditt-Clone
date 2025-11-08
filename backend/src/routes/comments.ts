@@ -2,6 +2,7 @@ import { Router } from 'express';
 import Comment from '../models/Comment';
 import Post from '../models/Post';
 import User from '../models/User';
+import auth from '../middleware/auth';
 
 const router = Router();
 
@@ -38,7 +39,7 @@ router.post('/:id/vote', async (req, res) => {
 });
 
 // Reply to a comment
-router.post('/:id/reply', async (req, res) => {
+router.post('/:id/reply', auth, async (req, res) => {
   try {
     const parentComment = await Comment.findById(req.params.id);
     if (!parentComment) {
@@ -50,12 +51,14 @@ router.post('/:id/reply', async (req, res) => {
       return res.status(400).json({ message: 'Reply content is required' });
     }
 
-    // In a real app, author would come from authenticated user session
-    const tempAuthor = { id: 'u1', name: 'dev_user' };
+    const user = await User.findById(req.user.id);
+    if (!user) {
+        return res.status(404).json({ message: 'Authenticated user not found' });
+    }
 
     const newReply = new Comment({
       content,
-      author: tempAuthor,
+      author: { id: user.id, name: user.name },
       post: parentComment.post, // Associate with the same post
       votes: 1, // Start with one upvote
     });
@@ -67,7 +70,6 @@ router.post('/:id/reply', async (req, res) => {
     await parentComment.save();
     
     // Increment post's comment count
-    // FIX: Cast parentComment.post to 'any' to resolve TypeScript type inference error.
     await Post.findByIdAndUpdate(parentComment.post as any, { $inc: { commentsCount: 1 } });
     
     const populatedReply = newReply.toJSON();

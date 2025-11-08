@@ -1,13 +1,11 @@
-// FIX: Switched to default and named imports for express to resolve type errors.
-// This ensures that express types like 'Request' and 'Response' do not clash
-// with other types and are correctly recognized.
-import express, { Request, Response, Express } from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import connectDB from './db';
 import apiRoutes from './routes/api';
+import './types'; // For Express Request type augmentation
 
-const app: Express = express();
+const app: express.Express = express();
 const PORT = process.env.PORT || 5000;
 
 // Connect to Database

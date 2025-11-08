@@ -5,6 +5,7 @@ import VoteButtons from './VoteButtons';
 import { ReplyIcon } from './icons/ReplyIcon';
 import { timeAgo } from '../utils/time';
 import { replyToComment } from '../services/api';
+import { useAuth } from '../hooks/useAuth';
 
 interface CommentProps {
   comment: CommentType;
@@ -16,6 +17,7 @@ const Comment: React.FC<CommentProps> = ({ comment: initialComment }) => {
   const [replyContent, setReplyContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const handleToggleReply = () => {
     setIsReplying(prev => !prev);
@@ -65,13 +67,15 @@ const Comment: React.FC<CommentProps> = ({ comment: initialComment }) => {
         <p className="text-sm text-reddit-text-primary mb-2">{comment.content}</p>
         <div className="flex items-center space-x-1 text-xs text-reddit-text-secondary font-bold">
           <VoteButtons initialVotes={comment.votes} commentId={comment.id} />
-          <button onClick={handleToggleReply} className="flex items-center space-x-1 cursor-pointer hover:bg-reddit-border p-2 rounded">
-             <ReplyIcon className="h-4 w-4" />
-             <span>Reply</span>
-          </button>
+          {user && (
+            <button onClick={handleToggleReply} className="flex items-center space-x-1 cursor-pointer hover:bg-reddit-border p-2 rounded">
+              <ReplyIcon className="h-4 w-4" />
+              <span>Reply</span>
+            </button>
+          )}
         </div>
         
-        {isReplying && (
+        {user && isReplying && (
           <form onSubmit={handleReplySubmit} className="mt-3 ml-4 space-y-2">
             <textarea
               value={replyContent}

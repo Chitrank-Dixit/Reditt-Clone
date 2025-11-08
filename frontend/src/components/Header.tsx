@@ -2,8 +2,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { RedditIcon } from './icons/RedditIcon';
 import { SearchIcon } from './icons/SearchIcon';
+import { useAuth } from '../hooks/useAuth';
 
 const Header: React.FC = () => {
+  const { user, logout } = useAuth();
+
   return (
     <header className="sticky top-0 z-10 bg-reddit-dark-soft border-b border-reddit-border p-2">
       <div className="container mx-auto flex items-center justify-between max-w-5xl">
@@ -26,12 +29,26 @@ const Header: React.FC = () => {
         </div>
         
         <div className="flex items-center space-x-2">
-          <button className="hidden sm:block border border-reddit-blue text-reddit-blue font-bold py-2 px-4 rounded-full hover:bg-reddit-blue hover:text-white transition-colors duration-200">
-            Log In
-          </button>
-          <button className="bg-reddit-blue text-white font-bold py-2 px-4 rounded-full hover:bg-opacity-80 transition-colors duration-200">
-            Sign Up
-          </button>
+          {user ? (
+            <>
+              <span className="text-white font-bold hidden sm:block">u/{user.name}</span>
+              <button 
+                onClick={logout}
+                className="bg-reddit-blue text-white font-bold py-2 px-4 rounded-full hover:bg-opacity-80 transition-colors duration-200"
+              >
+                Log Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="hidden sm:block border border-reddit-blue text-reddit-blue font-bold py-2 px-4 rounded-full hover:bg-reddit-blue hover:text-white transition-colors duration-200">
+                Log In
+              </Link>
+              <Link to="/signup" className="bg-reddit-blue text-white font-bold py-2 px-4 rounded-full hover:bg-opacity-80 transition-colors duration-200">
+                Sign Up
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>
