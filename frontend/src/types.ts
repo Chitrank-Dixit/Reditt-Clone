@@ -10,6 +10,7 @@ export interface ProfileUser {
   bio?: string;
   avatarUrl?: string;
   joinDate: string;
+  karma: number;
 }
 
 export interface Post {

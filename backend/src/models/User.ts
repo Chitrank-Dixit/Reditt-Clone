@@ -6,6 +6,7 @@ export interface IUser extends Document {
   bio?: string;
   avatarUrl?: string;
   joinDate: Date;
+  karma: number;
 }
 
 const UserSchema = new Schema({
@@ -14,6 +15,7 @@ const UserSchema = new Schema({
   bio: { type: String, default: 'No bio provided.' },
   avatarUrl: { type: String, default: null },
   joinDate: { type: Date, default: Date.now },
+  karma: { type: Number, default: 0 },
 }, {
     timestamps: true
 });

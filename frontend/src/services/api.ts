@@ -61,6 +61,16 @@ export const voteOnEntity = (
     });
 };
 
+export const replyToComment = (commentId: string, content: string): Promise<Comment> => {
+    return fetcher<Comment>(`/comments/${commentId}/reply`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content }),
+    });
+};
+
 export const getPostsByUsername = (username: string, sort: string): Promise<Post[]> => {
     return fetcher<Post[]>(`/users/${username}/posts?sort=${sort}`);
 };

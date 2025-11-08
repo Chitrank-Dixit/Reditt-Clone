@@ -7,9 +7,9 @@ import User from './models/User';
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/reddit-clone';
 
 const MOCK_USERS_DATA = [
-  { id: 'u1', name: 'dev_user', bio: 'Full-stack developer with a passion for building cool things with Node.js and React.', avatarUrl: 'https://picsum.photos/seed/dev_user/200' },
-  { id: 'u2', name: 'react_fan', bio: 'Frontend enthusiast. I love everything about the React ecosystem.', joinDate: new Date('2022-08-15T10:00:00.000Z') },
-  { id: 'u3', name: 'tailwind_guru', bio: 'Making the web beautiful, one utility class at a time.', avatarUrl: null, joinDate: new Date('2021-03-22T14:30:00.000Z') },
+  { id: 'u1', name: 'dev_user', bio: 'Full-stack developer with a passion for building cool things with Node.js and React.', avatarUrl: 'https://picsum.photos/seed/dev_user/200', karma: 2450 },
+  { id: 'u2', name: 'react_fan', bio: 'Frontend enthusiast. I love everything about the React ecosystem.', joinDate: new Date('2022-08-15T10:00:00.000Z'), karma: 850 },
+  { id: 'u3', name: 'tailwind_guru', bio: 'Making the web beautiful, one utility class at a time.', avatarUrl: null, joinDate: new Date('2021-03-22T14:30:00.000Z'), karma: 1200 },
 ];
 
 const MOCK_POSTS_DATA = [

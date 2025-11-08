@@ -10,6 +10,7 @@ import { UserIcon } from '../components/icons/UserIcon';
 import { CakeIcon } from '../components/icons/CakeIcon';
 import { CameraIcon } from '../components/icons/CameraIcon';
 import { EditIcon } from '../components/icons/EditIcon';
+import { KarmaIcon } from '../components/icons/KarmaIcon';
 
 type View = 'posts' | 'comments';
 
@@ -207,9 +208,21 @@ const UserProfilePage: React.FC = () => {
                 <p className="text-sm text-reddit-text-primary">{user.bio || 'No bio provided.'}</p>
             )}
             
-            <div className="flex items-center space-x-2 text-sm text-reddit-text-secondary mt-4">
-                <CakeIcon className="h-5 w-5" />
-                <span>Cake day: {new Date(user.joinDate).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+            <div className="grid grid-cols-2 gap-4 mt-4 border-t border-reddit-border pt-4">
+                <div className="flex items-center space-x-2 text-sm text-reddit-text-secondary">
+                    <KarmaIcon className="h-5 w-5" />
+                    <div>
+                        <p className="font-bold text-white">{user.karma.toLocaleString()}</p>
+                        <p className="text-xs">Karma</p>
+                    </div>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-reddit-text-secondary">
+                    <CakeIcon className="h-5 w-5" />
+                    <div>
+                        <p className="font-bold text-white">{new Date(user.joinDate).toLocaleString('en-US', { year: 'numeric', month: 'long' })}</p>
+                        <p className="text-xs">Cake day</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

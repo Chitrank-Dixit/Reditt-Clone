@@ -24,7 +24,8 @@ const CommentSchema = new Schema({
 });
 
 CommentSchema.set('toJSON', {
-    transform: (document, returnedObject) => {
+    // FIX: Add 'any' type to returnedObject to allow adding the 'id' property.
+    transform: (document, returnedObject: any) => {
         returnedObject.id = returnedObject._id.toString();
         delete returnedObject._id;
         delete returnedObject.__v;

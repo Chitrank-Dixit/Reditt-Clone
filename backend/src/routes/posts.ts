@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import Post from '../models/Post';
 import Comment from '../models/Comment';
+import User from '../models/User';
 
 const router = Router();
 
@@ -156,13 +157,23 @@ router.post('/:id/vote', async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
     const { vote } = req.body; // 'up' or 'down'
+
+    let voteChange = 0;
     if (vote === 'up') {
       post.votes++;
+      voteChange = 1;
     } else if (vote === 'down') {
       post.votes--;
+      voteChange = -1;
     } else {
       return res.status(400).json({ message: 'Invalid vote direction' });
     }
+    
+    // Update author's karma
+    if (voteChange !== 0) {
+      await User.findOneAndUpdate({ name: post.author.name }, { $inc: { karma: voteChange } });
+    }
+    
     await post.save();
     res.json(post);
   } catch (error) {
